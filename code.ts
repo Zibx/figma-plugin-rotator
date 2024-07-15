@@ -10,7 +10,7 @@ if (figma.editorType === 'figma') {
 
   // This shows the HTML page in "ui.html".
   figma.showUI(__html__, { themeColors: true});
-  figma.ui.resize(300, 300)
+  figma.ui.resize(300, 220)
 
   let vector: VectorNode;
 
@@ -65,3 +65,12 @@ if (figma.editorType === 'figma') {
     }
   };
 }
+
+const updateSelection = function(){
+  console.log(figma.currentPage.selection);
+
+  figma.ui.postMessage({type: 'selection', amount: figma.currentPage.selection.length})
+};
+figma.on("selectionchange", updateSelection);
+
+updateSelection();
