@@ -1,0 +1,74 @@
+<style>
+  .flex {
+      display: flex; gap: 8px;
+  }
+</style>
+<script src="https://cdn.jsdelivr.net/gh/thomas-lowry/figma-plugin-ds/dist/iife/figma-plugin-ds.js"></script>
+<link rel="stylesheet" as="style" href="https://cdn.jsdelivr.net/gh/thomas-lowry/figma-plugin-ds/dist/figma-plugin-ds.css">
+<style>
+    body {
+        padding: 8px;
+    }
+    h1,h2,h3, p {
+        color: var(--figma-color-text)
+    }
+    .labeled {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+    }
+    .top-space {
+        margin-top: 16px;
+    }
+</style>
+<h3>Formula drawer</h3>
+<p>Formula: <input id="formula" type="text" class="input__field" value="y=x*x"></p>
+<div style="display: flex">
+  <p>Left (<span id="from-lbl"></span>): <input id="from" type="range" min="-32" max="32" value="-4"></p>
+  <p>Right (<span id="to-lbl"></span>): <input id="to" type="range" min="-32" max="32" value="4"></p>
+</div>
+
+
+<div class="labeled"><p>Count:</p> <input id="points" type="number" value="16" class="input__field" style="width:5em" ></div>
+<div class="flex top-space">
+<button id="create" class="button button--primary">Create</button>
+<button id="cancel" class="button button--secondary">Cancel</button>
+</div>
+
+<script>
+
+const el = {
+  from: document.getElementById('from'),
+  to: document.getElementById('to'),
+  lblTo: document.getElementById('to-lbl'),
+  lblFrom: document.getElementById('from-lbl'),
+};
+const updateLbls = function(){
+    el.lblTo.innerText = el.to.value;
+    el.lblFrom.innerText = el.from.value;
+};
+
+
+['input', 'mouseup', 'change'].forEach(evtName => {
+  el.from.addEventListener(evtName, updateLbls);
+  el.to.addEventListener(evtName, updateLbls);
+});
+
+updateLbls();
+
+document.getElementById('create').onclick = () => {
+  parent.postMessage({ pluginMessage: {
+    type: 'create-shapes',
+    count: parseInt(document.getElementById('points').value, 10),
+    from: document.getElementById('from').value-0,
+    to: document.getElementById('to').value-0,
+    formula: document.getElementById('formula').value,
+
+  } }, '*')
+}
+
+document.getElementById('cancel').onclick = () => {
+  parent.postMessage({ pluginMessage: { type: 'cancel' } }, '*')
+}
+
+</script>
