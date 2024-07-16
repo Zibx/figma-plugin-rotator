@@ -1,4 +1,15 @@
-node_modules/
+out/
+build/
+public/build/
+dist/
+*.zip
+
+# dependencies
+/node_modules
+/os/node_modules
+/.pnp
+.pnp.js
+
 dist/
 .vscode/
 .idea/
@@ -6,6 +17,7 @@ dist/
 package.json
 package-lock.json
 
+.env
 .env.local
 .env.development.local
 .env.test.local
@@ -17,4 +29,6 @@ yarn-error.log*
 package-lock.json
 yarn.lock
 
-.env
+# Node
+*.log
+*.log.*

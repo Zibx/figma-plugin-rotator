@@ -1,146 +1,82 @@
+import {POSITIONS} from './constants/position';
+import {CacheItem, PointArray, rotateAndScalePrepareT, Transformation} from './types';
+import {rotateAndScalePrepare} from './math';
+
 const SPAWN_OFFSET = 16;
-
-
-const POSITIONS = {
-  RIGHT: [1, 0],
-  LEFT: [-1, 0],
-  TOP: [0, -1],
-  BOTTOM: [0, 1],
-};
 
 const SPAWN_AT = 'RIGHT';
 const NEW_POSITION_X = POSITIONS[SPAWN_AT][0];
 const NEW_POSITION_Y = POSITIONS[SPAWN_AT][1];
 
-let currentSelection:SceneNode & DefaultShapeMixin;
+let currentSelection: SceneNode & DefaultShapeMixin;
 
-interface Transformation {
-  X: number,
-  Y: number,
-  Z: number,
-  scale: number
-}
-// matrix
-const degToRad = function(val:number){
-  return val / 180 * Math.PI;
-};
-
-type PointArray = [number, number];
-
-type rotateAndScalePrepareT = (x: number, y: number) => PointArray;
-
-const rotateAndScalePrepare = function(inputValues:Transformation):rotateAndScalePrepareT{
-  const rotateX = degToRad(inputValues.X),
-    rotateY = degToRad(inputValues.Y),
-    rotateZ = degToRad(inputValues.Z),
-    scale = inputValues.scale;
-
-
-  const cosa = Math.cos(rotateX);
-  const sina = Math.sin(rotateX);
-
-  const cosb = Math.cos(rotateY);
-  const sinb = Math.sin(rotateY);
-
-  const cosc = Math.cos(rotateZ);
-  const sinc = Math.sin(rotateZ);
-
-  const Axx = (cosa*cosb) ;
-  const Axy = cosa*sinb*sinc - sina*cosc;
-
-  const Ayx = sina*cosb;
-  const Ayy = (sina*sinb*sinc + cosa*cosc) ;
-
-  return function(x, y){
-    return [
-      (Axx*x + Axy*y)*scale,
-      (Ayx*x + Ayy*y)*scale
-    ];
-  };
-};
-
-
-const transformPath = function(vectorPaths: VectorPaths, transformFn: rotateAndScalePrepareT):VectorPaths{
-  return vectorPaths.map(path => {
-    const newData = path.data.replace(/([ZCQML])([\d.])/g,'$1 $2').split(' ');
-    let point:PointArray = [0,0],
+const transformPath = function (
+  vectorPaths: VectorPaths,
+  transformFn: rotateAndScalePrepareT
+): VectorPaths {
+  return vectorPaths.map((path) => {
+    const newData = path.data.replace(/([ZCQML])([\d.])/g, '$1 $2').split(' ');
+    let point: PointArray = [0, 0],
       pointPointer = 0;
 
-    for(let i = 0, _i = newData.length; i < _i; i++){
+    for (let i = 0, _i = newData.length; i < _i; i++) {
       const token = newData[i];
-      if(!token)
+      if (!token) continue;
+      if (token === 'Z' || token === 'C' || token === 'Q' || token === 'M' || token === 'L') {
         continue;
-      if(token === 'Z' || token === 'C' || token === 'Q' || token === 'M' || token === 'L') {
-        continue
       }
 
       point[pointPointer] = parseFloat(token);
       pointPointer++;
-      if(pointPointer === 2){
+      if (pointPointer === 2) {
         point = transformFn(point[0], point[1]);
-        newData[i-1] = point[0].toString();
+        newData[i - 1] = point[0].toString();
         newData[i] = point[1].toString();
 
         pointPointer = 0;
       }
-
     }
+
 
     // debugger
     return {
       data: newData.join(' '),
       windingRule: path.windingRule
-    }
-  })
-}
-
-type CacheItem = {
-  vector: VectorNode,
-  transformation: Transformation,
-  paths: VectorPaths
-}
+    };
+  });
+};
 
 const selectionMap = new WeakMap<BaseNode, CacheItem>();
 // Runs this code if the plugin is run in Figma
 if (figma.editorType === 'figma') {
-
   // Render plugin HTML
-  figma.showUI(__html__, { themeColors: true});
-  figma.ui.resize(300, 220)
-
-
+  figma.showUI(__html__, {themeColors: true});
+  figma.ui.resize(300, 220);
 
   // Messages processing
-  figma.ui.onmessage =  (msg: {
-    data: Transformation;
-    type: string,
-    instant: boolean,
-  }) => {
-
+  figma.ui.onmessage = (msg: {data: Transformation; type: string; instant: boolean}) => {
     if (msg.type === 'apply-transformation') {
       let createNewVector = false,
-          cached:CacheItem;
+        cached: CacheItem;
 
-      if(!selectionMap.has(currentSelection)) {
+      if (!selectionMap.has(currentSelection)) {
         createNewVector = true;
-      }else{
-        cached = selectionMap.get(currentSelection) as CacheItem ;
-        if(cached.vector.removed) {
+      } else {
+        cached = selectionMap.get(currentSelection) as CacheItem;
+        if (cached.vector.removed) {
           createNewVector = true;
         }
       }
 
       let vector: VectorNode;
       // Create new vector if it is the first call
-      if(createNewVector){
-
+      if (createNewVector) {
         const NodeType = currentSelection.type;
-        if(NodeType === 'TEXT'){
+        if (NodeType === 'TEXT') {
           vector = figma.flatten([currentSelection.clone()], figma.currentPage);
-        }else {
+        } else {
           vector = figma.createVector();
         }
-
 
         vector.fills = currentSelection.fills;
 
@@ -155,36 +91,37 @@ if (figma.editorType === 'figma') {
 
         let selectionPaths: VectorPaths;
 
-
-
-        if(NodeType === 'VECTOR') {
+        if (NodeType === 'VECTOR') {
           selectionPaths = (currentSelection as VectorNode).vectorPaths;
-        }else if(NodeType === 'RECTANGLE' || NodeType === 'ELLIPSE' || NodeType === 'STAR' || NodeType === 'POLYGON'){
+        } else if (
+          NodeType === 'RECTANGLE' ||
+          NodeType === 'ELLIPSE' ||
+          NodeType === 'STAR' ||
+          NodeType === 'POLYGON'
+        ) {
           selectionPaths = currentSelection.fillGeometry;
-        }else if(NodeType === 'TEXT') {
+        } else if (NodeType === 'TEXT') {
           selectionPaths = currentSelection.fillGeometry;
-        }else{
+        } else {
           console.warn('Unsupported node type:', NodeType);
           return false;
         }
 
         figma.currentPage.appendChild(vector);
 
-        debugger
+        debugger;
         cached = {
           vector,
           transformation: msg.data,
-          paths: selectionPaths,
+          paths: selectionPaths
         };
         selectionMap.set(currentSelection, cached);
       }
 
-      cached = selectionMap.get(currentSelection) as CacheItem
+      cached = selectionMap.get(currentSelection) as CacheItem;
 
       vector = cached.vector;
       cached.transformation = msg.data;
-
-
 
       // console.log(vector.vectorNetwork);
       //console.log(currentSelection.vectorNetwork);
@@ -194,19 +131,16 @@ if (figma.editorType === 'figma') {
       const transformFn = rotateAndScalePrepare(msg.data);
       vector.vectorPaths = transformPath(cached.paths, transformFn);
 
-
-
-      vector.x = currentSelection.x + (currentSelection.width + SPAWN_OFFSET)*NEW_POSITION_X;
-      vector.y = currentSelection.y + (currentSelection.height + SPAWN_OFFSET)*NEW_POSITION_Y -
-        (NEW_POSITION_Y === 0 ? (vector.height - currentSelection.height)/2 : 0);
-
+      vector.x = currentSelection.x + (currentSelection.width + SPAWN_OFFSET) * NEW_POSITION_X;
+      vector.y =
+        currentSelection.y +
+        (currentSelection.height + SPAWN_OFFSET) * NEW_POSITION_Y -
+        (NEW_POSITION_Y === 0 ? (vector.height - currentSelection.height) / 2 : 0);
 
       //vector.fillGeometry = currentSelection.fillGeometry
       //vector.strokeGeometry = currentSelection.strokeGeometry
 
       figma.viewport.scrollAndZoomIntoView([vector]);
-
-
     }
   };
 }
@@ -220,25 +154,22 @@ const supportedTypes = {
   TEXT: 6
 };
 
-const updateSelection = function(){
-  if(figma.currentPage.selection.length) {
+const updateSelection = function () {
+  if (figma.currentPage.selection.length) {
     currentSelection = figma.currentPage.selection[0] as SceneNode & DefaultShapeMixin;
   }
 
   figma.ui.postMessage({
     type: 'selection',
-    amount: figma.currentPage.selection.length, supported: currentSelection && (currentSelection.type in supportedTypes),
+    amount: figma.currentPage.selection.length,
+    supported: currentSelection && currentSelection.type in supportedTypes,
     shapeType: currentSelection?.type
   });
-
-
 };
-figma.on("selectionchange", updateSelection);
-figma.currentPage.on("nodechange", function(event){
-    console.log(event);
+
+figma.on('selectionchange', updateSelection);
+figma.currentPage.on('nodechange', function (event) {
+  console.log(event);
 });
-
-
-
 
 updateSelection();

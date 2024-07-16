@@ -1,0 +1,66 @@
+body {
+    padding: 8px !important;
+}
+h1,
+h2,
+h3,
+p,
+label,
+.checkbox {
+    color: var(--figma-color-text) !important;
+    font-size: 0.8em;
+}
+.checkbox__label:before {
+    border-color: var(--figma-color-text) !important;
+}
+.labeled {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+.top-space {
+    margin-top: 16px;
+}
+label {
+    display: block;
+}
+.number {
+    width: 5em !important;
+}
+.input__wrap {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin: 4px 0;
+}
+.spacing {
+    margin: 16px;
+}
+.input__label {
+    min-width: 1em;
+    opacity: 0.6;
+}
+.dotted {
+    color: var(--figma-color-text);
+    border: 4px dashed;
+    display: flex;
+    width: calc(100vw - 16px);
+    height: calc(100vh - 16px);
+    box-sizing: border-box;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3em;
+}
+.object-not-selected {
+    display: none;
+}
+.preview-3d {
+    flex-grow: 1;
+}
+.button--hidden {
+    display: none;
+}
+.flex {
+    display: flex;
+    gap: 8px;
+}

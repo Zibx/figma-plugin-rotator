@@ -1,90 +1,28 @@
-<style>
-  .flex {
-      display: flex; gap: 8px;
-  }
-</style>
+
 <!-- Library of UI components recommended by figma plugin doc  -->
 <script src="https://cdn.jsdelivr.net/gh/thomas-lowry/figma-plugin-ds/dist/iife/figma-plugin-ds.js"></script>
-<link rel="stylesheet" as="style" href="https://cdn.jsdelivr.net/gh/thomas-lowry/figma-plugin-ds/dist/figma-plugin-ds.css">
-<style>
-    body {
-        padding: 8px;
-    }
-    h1,h2,h3, p, label, .checkbox {
-        color: var(--figma-color-text) !important;
-        font-size: 0.8em;
-    }
-    .checkbox__label:before {
-        border-color: var(--figma-color-text) !important;
-    }
-    .labeled {
-        display: flex;
-        gap: 8px;
-        align-items: center;
-    }
-    .top-space {
-        margin-top: 16px;
-    }
-    label {
-        display: block;
-    }
-    .number {
-        width: 5em
-    }
-    .input__wrap {
-        display: flex;
-        gap: 8px;
-        align-items: center;
-        margin: 4px 0;
-    }
-    .spacing {
-        margin: 16px;
-    }
-    .input__label {
-        min-width: 1em;
-        opacity: 0.6;
-    }
-    .dotted {
-        color: var(--figma-color-text);
-        border: 4px dashed;
-        display: flex;
-        width: calc(100vw - 16px);
-        height: calc(100vh - 16px);
-        box-sizing: border-box;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.3em;
-    }
-    .object-not-selected {
-        display: none;
-    }
-    .preview-3d {
-        flex-grow: 1;
-    }
-    .button--hidden {
-        display: none;
-    }
-</style>
+<link
+  rel="stylesheet" as="style" href="https://cdn.jsdelivr.net/gh/thomas-lowry/figma-plugin-ds/dist/figma-plugin-ds.css"/>
 
 <div class="object-selected">
   <div class="flex">
     <div class="inputs-ui">
       <label class="input__wrap">
         <span class="input__label">X°</span>
-        <input id="X" type="number" value="0" class="input__field number">
+        <input id="X" type="number" value="0" class="input__field number" />
       </label>
       <label class="input__wrap">
         <span class="input__label">Y°</span>
-        <input id="Y" type="number" value="0" class="input__field number">
+        <input id="Y" type="number" value="0" class="input__field number" />
       </label>
       <label class="input__wrap">
         <span class="input__label">Z°</span>
-        <input id="Z" type="number" value="0" class="input__field number">
+        <input id="Z" type="number" value="0" class="input__field number" />
       </label>
       <div class="spacing"></div>
       <label class="input__wrap">
         <span class="input__label">Scale</span>
-        <input id="scale" type="number" value="1" class="input__field number" step="0.1">
+        <input id="scale" type="number" value="1" class="input__field number" step="0.1" />
       </label>
       <div class="spacing"></div>
     </div>
@@ -93,242 +31,13 @@
     </div>
   </div>
   <div class="flex">
-  <button id="apply" class="button button--primary apply-button">Apply</button>
+    <button id="apply" class="button button--primary apply-button">Apply</button>
     <div class="checkbox">
-      <input id="instant" type="checkbox" class="checkbox__box is_instant">
+      <input id="instant" type="checkbox" class="checkbox__box is_instant" />
       <label for="instant" class="checkbox__label">instant mode</label>
     </div>
   </div>
 </div>
 <div class="object-not-selected">
-  <div class="dotted annotation">
-
-  </div>
+  <div class="dotted annotation"></div>
 </div>
-<script>
-
-const LOCALE = {
-  'NOTHING_SELECTED': ()=>'Please, select an object',
-  'NOT_SUPPORTED': (msg)=>`Sorry, ${msg.shapeType} is not supported yet`,
-};
-
-
-// collect ui elements. Transform css classes to js naming (object-not-selected) => objectNotSelected
-const ui = {};
-['object-not-selected', 'annotation', 'object-selected', 'is_instant', 'apply-button'].forEach(name => {
-  ui[ name.replace( /[\-\_](\w)/g, ( _, c ) => c.toUpperCase() ) ] = document.querySelector( '.' + name );
-});
-
-// Collect all DOM input elements
-const inputElements = {};
-['X', 'Y', 'Z', 'scale'].forEach((name) => inputElements[name] = document.getElementById(name));
-
-// Canvas related elements
-const previewEl = document.body.querySelector('.preview-3d');
-const canvasEl = document.getElementById('canvas');
-const ctx = canvasEl.getContext('2d');
-
-
-const degToRad = function(val){
-    return val / 180 * Math.PI;
-};
-
-// Matrix multiplication (rotation + scale) matrix * point3 input
-const rotateAndScale = function(point){
-  let [x, y] = point,
-      z = 0;
-  const rotateX = degToRad(inputValues.X),
-    rotateY = degToRad(inputValues.Y),
-    rotateZ = degToRad(inputValues.Z),
-    scale = inputValues.scale;
-
-
-  const cosa = Math.cos(rotateX);
-  const sina = Math.sin(rotateX);
-
-  const cosb = Math.cos(rotateY);
-  const sinb = Math.sin(rotateY);
-
-  const cosc = Math.cos(rotateZ);
-  const sinc = Math.sin(rotateZ);
-
-  const Axx = (cosa*cosb) ;
-  const Axy = cosa*sinb*sinc - sina*cosc;
-  const Axz = cosa*sinb*cosc + sina*sinc;
-
-  const Ayx = sina*cosb;
-  const Ayy = (sina*sinb*sinc + cosa*cosc) ;
-  const Ayz = sina*sinb*cosc - cosa*sinc;
-
-  const Azx = -sinb;
-  const Azy = cosb*sinc;
-  const Azz = (cosb*cosc) ;
-
-  return [
-    (Axx*x + Axy*y + Axz*z)*scale,
-    (Ayx*x + Ayy*y + Ayz*z)*scale,
-    (Azx*x + Azy*y + Azz*z)*scale
-  ];
-
-};
-
-// transform given 2d point to 3d space relative to the canvas
-const relative = function(point){
-  let [x,y] = rotateAndScale(point)
-
-  const side = 0.5, // square side would be half of canvas width
-        scale = 0.5 * w * side; // 0.5 here is because points are from -1 to 1 like in game engines
-
-  x = x*scale+w/2
-  y = y*scale+h/2
-  return [x,y];
-}
-
-// update the preview
-const redraw3D = function(){
-  ctx.clearRect(0,0, w,h);
-  const points = [
-    [-1,1],
-    [1,1],
-    [1,-1],
-    [-1,-1]
-  ];
-
-  let relativePoint = relative(points[0]);
-
-  ctx.beginPath();
-  ctx.moveTo(relativePoint[0], relativePoint[1]);
-  for(let n = 0, _n = points.length; n < _n; n++){
-    relativePoint = relative(points[(n+1) % _n]);
-    ctx.lineTo(relativePoint[0], relativePoint[1]);
-  }
-  ctx.closePath();
-  ctx.strokeStyle = '#0c7dab';
-  ctx.lineWidth = 3;
-  ctx.stroke();
-};
-
-
-// update canvas size and store w, h for usage in the draw function
-let w, h;
-const resize = function(){
-  const rect = previewEl.getBoundingClientRect();
-  w = canvasEl.width = rect.width;
-  h = canvasEl.height = rect.height;
-  requestAnimationFrame(redraw3D);
-};
-window.addEventListener('resize', ()=> requestAnimationFrame(resize));
-
-// function for subscribing on inputs update
-let afterInputUpdate = ()=>{};
-
-// Collect all input values
-const inputValues = {};
-
-for(let elID in inputElements){
-  const updateInputValue = function(){
-    inputValues[elID] = parseFloat(inputElements[elID].value);
-    redraw3D();
-    afterInputUpdate();
-  };
-  inputElements[elID].addEventListener('input', updateInputValue);
-  updateInputValue();
-}
-
-resize();
-
-// message processors
-const messageProcess = {
-  selection: function(msg){
-    if(msg.amount === 1 && msg.supported){
-      ui.objectNotSelected.style.display = 'none';
-      ui.objectSelected.style.display = 'block';
-      return;
-    }
-
-    ui.objectNotSelected.style.display = 'block';
-    ui.objectSelected.style.display = 'none';
-
-    if(msg.amount !== 1){
-      ui.annotation.innerText = LOCALE.NOTHING_SELECTED();
-    }else if(!msg.supported) {
-      ui.annotation.innerText = LOCALE.NOT_SUPPORTED(msg)
-    }
-  },
-  other: function(value){
-    console.warn('Unknown message from plugin to UI', value);
-  }
-};
-
-onmessage = (event) => {
-  const type = event?.data?.pluginMessage?.type;
-  if(!(type)){
-    throw new Error('Something wrong with message '+ JSON.stringify(event?.data));
-  }
-  if(type in messageProcess){
-    messageProcess[type](event.data.pluginMessage)
-  }else{
-    messageProcess['other'](event.data.pluginMessage)
-  }
-};
-
-const applyTransformation = (instant) => {
-  parent.postMessage({ pluginMessage: {
-      type: 'apply-transformation',
-      data: inputValues,
-      instant: instant || false
-    } }, '*');
-}
-
-document.getElementById('apply').onclick = applyTransformation;
-
-// instant feature
-let instant = false;
-ui.isInstant.addEventListener('change', ()=>{
-  instant = ui.isInstant.checked;
-  ui.applyButton.classList[instant?'add':'remove']('button--hidden')
-  if(instant) {
-    applyTransformation(true);
-    afterInputUpdate = ()=>applyTransformation(true);
-  }else{
-    afterInputUpdate = () => {};
-  }
-});
-
-
-
-/*
-
-
-const updateLbls = function(){
-    inputElements.lblTo.innerText = inputElements.to.value;
-    inputElements.lblFrom.innerText = inputElements.from.value;
-};
-
-
-['input', 'mouseup', 'change'].forEach(evtName => {
-  inputElements.from.addEventListener(evtName, updateLbls);
-  inputElements.to.addEventListener(evtName, updateLbls);
-});
-
-updateLbls();
-
-document.getElementById('apply').onclick = () => {
-  parent.postMessage({ pluginMessage: {
-    type: 'create-shapes',
-    count: parseInt(document.getElementById('points').value, 10),
-    from: document.getElementById('from').value-0,
-    to: document.getElementById('to').value-0,
-    formula: document.getElementById('formula').value,
-
-  } }, '*')
-}
-
-document.getElementById('cancel').onclick = () => {
-  parent.postMessage({ pluginMessage: { type: 'cancel' } }, '*')
-}
-
-*/
-
-
-</script>

@@ -1,4 +1,5 @@
 # Figma vector rotation plugin
+
 This plugin performs rotation of the selected shape in a 3D space.
 
 # Installation for development
@@ -6,6 +7,7 @@ This plugin performs rotation of the selected shape in a 3D space.
 You MUST have node.js version >= 18. It is convenient to use [nvm](https://github.com/nvm-sh/nvm) for install\switch node.js versions.
 
 Install the TypeScript globally:
+
 ```shell
 npm install -g typescript
 ```
@@ -17,6 +19,7 @@ npm i
 ```
 
 While development stage use the `watch` script. It would automatically reload the plugin when any changes are made:
+
 ```shell
 npm start watch
 ```

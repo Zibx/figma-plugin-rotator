@@ -6,7 +6,7 @@
   "scripts": {
     "build": "webpack --mode=production",
     "lint": "npm run lint:ts && npm run lint:css",
-    "lint:fix": "npm run lint:ts:fix && npm run lint:css:fix",
+    "fix:prettier": "prettier --write \"**/*.*\"",
     "watch": "webpack --watch"
   },
   "author": {
