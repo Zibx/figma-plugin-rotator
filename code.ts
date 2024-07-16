@@ -1,76 +1,244 @@
-// This file holds the main code for plugins. Code in this file has access to
-// the *figma document* via the figma global object.
-// You can access browser APIs in the <script> tag inside "ui.html" which has a
-// full browser environment (See https://www.figma.com/plugin-docs/how-plugins-run).
+const SPAWN_OFFSET = 16;
 
+
+const POSITIONS = {
+  RIGHT: [1, 0],
+  LEFT: [-1, 0],
+  TOP: [0, -1],
+  BOTTOM: [0, 1],
+};
+
+const SPAWN_AT = 'RIGHT';
+const NEW_POSITION_X = POSITIONS[SPAWN_AT][0];
+const NEW_POSITION_Y = POSITIONS[SPAWN_AT][1];
+
+let currentSelection:SceneNode & DefaultShapeMixin;
+
+interface Transformation {
+  X: number,
+  Y: number,
+  Z: number,
+  scale: number
+}
+// matrix
+const degToRad = function(val:number){
+  return val / 180 * Math.PI;
+};
+
+type PointArray = [number, number];
+
+type rotateAndScalePrepareT = (x: number, y: number) => PointArray;
+
+const rotateAndScalePrepare = function(inputValues:Transformation):rotateAndScalePrepareT{
+  const rotateX = degToRad(inputValues.X),
+    rotateY = degToRad(inputValues.Y),
+    rotateZ = degToRad(inputValues.Z),
+    scale = inputValues.scale;
+
+
+  const cosa = Math.cos(rotateX);
+  const sina = Math.sin(rotateX);
+
+  const cosb = Math.cos(rotateY);
+  const sinb = Math.sin(rotateY);
+
+  const cosc = Math.cos(rotateZ);
+  const sinc = Math.sin(rotateZ);
+
+  const Axx = (cosa*cosb) ;
+  const Axy = cosa*sinb*sinc - sina*cosc;
+
+  const Ayx = sina*cosb;
+  const Ayy = (sina*sinb*sinc + cosa*cosc) ;
+
+  return function(x, y){
+    return [
+      (Axx*x + Axy*y)*scale,
+      (Ayx*x + Ayy*y)*scale
+    ];
+  };
+};
+
+
+const transformPath = function(vectorPaths: VectorPaths, transformFn: rotateAndScalePrepareT):VectorPaths{
+  return vectorPaths.map(path => {
+    const newData = path.data.replace(/([ZCQML])([\d.])/g,'$1 $2').split(' ');
+    let point:PointArray = [0,0],
+      pointPointer = 0;
+
+    for(let i = 0, _i = newData.length; i < _i; i++){
+      const token = newData[i];
+      if(!token)
+        continue;
+      if(token === 'Z' || token === 'C' || token === 'Q' || token === 'M' || token === 'L') {
+        continue
+      }
+
+      point[pointPointer] = parseFloat(token);
+      pointPointer++;
+      if(pointPointer === 2){
+        point = transformFn(point[0], point[1]);
+        newData[i-1] = point[0].toString();
+        newData[i] = point[1].toString();
+
+        pointPointer = 0;
+      }
+
+    }
+
+    // debugger
+    return {
+      data: newData.join(' '),
+      windingRule: path.windingRule
+    }
+  })
+}
+
+type CacheItem = {
+  vector: VectorNode,
+  transformation: Transformation,
+  paths: VectorPaths
+}
+
+const selectionMap = new WeakMap<BaseNode, CacheItem>();
 // Runs this code if the plugin is run in Figma
 if (figma.editorType === 'figma') {
-  // This plugin will open a window to prompt the user to enter a number, and
-  // it will then create that many rectangles on the screen.
 
-  // This shows the HTML page in "ui.html".
+  // Render plugin HTML
   figma.showUI(__html__, { themeColors: true});
   figma.ui.resize(300, 220)
 
-  let vector: VectorNode;
-
-  // Calls to "parent.postMessage" from within the HTML page will trigger this
-  // callback. The callback will be passed the "pluginMessage" property of the
-  // posted message.
-  figma.ui.onmessage =  (msg: {type: string, count: number, from: number, to: number, formula: string}) => {
-    // One way of distinguishing between different types of messages sent from
-    // your HTML page is to use an object with a "type" property like this.
 
 
-    if (msg.type === 'create-shapes') {
+  // Messages processing
+  figma.ui.onmessage =  (msg: {
+    data: Transformation;
+    type: string,
+    instant: boolean,
+  }) => {
 
-      if(!vector || vector.removed)
-        vector = figma.createVector();
+    if (msg.type === 'apply-transformation') {
+      let createNewVector = false,
+          cached:CacheItem;
 
-
-      const fn = new Function('x', 'const sin = Math.sin, cos = Math.cos, abs = Math.abs; let y;'+msg.formula+';return -y');
-
-
-      const data = ['M '+msg.from.toFixed(2)+' '+fn(msg.from).toFixed(2)];
-      if(msg.to <= msg.from)
-        return;
-
-      const delta = msg.to-msg.from,
-            step = delta/(msg.count-1);
-
-      let i;
-      for (i = 1; i < msg.count-1; i++) {
-        data.push('C '+
-          (msg.from+(i-0.5)*step).toFixed(2)+' '+fn(msg.from+(i-0.5)*step).toFixed(2)+' '+
-          (msg.from+(i-0.5)*step).toFixed(2)+' '+fn(msg.from+(i-0.5)*step).toFixed(2)+' '+
-          (msg.from+i*step).toFixed(2)+' '+fn(msg.from+i*step).toFixed(2))
-      }
-      data.push('L '+(msg.from+i*step).toFixed(2)+' '+fn(msg.from+i*step).toFixed(2))
-      vector.strokes = [{type: 'SOLID', color: {r: 1, g: 0.5, b: 0}}];
-
-      console.log(data.join(' '))
-
-      vector.vectorPaths = [
-        {
-          windingRule: 'EVENODD',
-          data: data.join(' ')
+      if(!selectionMap.has(currentSelection)) {
+        createNewVector = true;
+      }else{
+        cached = selectionMap.get(currentSelection) as CacheItem ;
+        if(cached.vector.removed) {
+          createNewVector = true;
         }
-      ];
-      figma.currentPage.appendChild(vector);
+      }
+
+      let vector: VectorNode;
+      // Create new vector if it is the first call
+      if(createNewVector){
+
+        const NodeType = currentSelection.type;
+        if(NodeType === 'TEXT'){
+          vector = figma.flatten([currentSelection.clone()], figma.currentPage);
+        }else {
+          vector = figma.createVector();
+        }
+
+
+        vector.fills = currentSelection.fills;
+
+        // copy stroke style
+        vector.strokes = currentSelection.strokes;
+        vector.strokeAlign = currentSelection.strokeAlign;
+        vector.strokeCap = currentSelection.strokeCap;
+        vector.strokeJoin = currentSelection.strokeJoin;
+        vector.strokeMiterLimit = currentSelection.strokeMiterLimit;
+        vector.strokeWeight = currentSelection.strokeWeight;
+        vector.dashPattern = currentSelection.dashPattern;
+
+        let selectionPaths: VectorPaths;
 
 
 
-      figma.currentPage.selection = [vector];
+        if(NodeType === 'VECTOR') {
+          selectionPaths = (currentSelection as VectorNode).vectorPaths;
+        }else if(NodeType === 'RECTANGLE' || NodeType === 'ELLIPSE' || NodeType === 'STAR' || NodeType === 'POLYGON'){
+          selectionPaths = currentSelection.fillGeometry;
+        }else if(NodeType === 'TEXT') {
+          selectionPaths = currentSelection.fillGeometry;
+        }else{
+          console.warn('Unsupported node type:', NodeType);
+          return false;
+        }
+
+        figma.currentPage.appendChild(vector);
+
+        debugger
+        cached = {
+          vector,
+          transformation: msg.data,
+          paths: selectionPaths,
+        };
+        selectionMap.set(currentSelection, cached);
+      }
+
+      cached = selectionMap.get(currentSelection) as CacheItem
+
+      vector = cached.vector;
+      cached.transformation = msg.data;
+
+
+
+      // console.log(vector.vectorNetwork);
+      //console.log(currentSelection.vectorNetwork);
+
+      //vector.vectorNetwork = currentSelection.vectorNetwork
+
+      const transformFn = rotateAndScalePrepare(msg.data);
+      vector.vectorPaths = transformPath(cached.paths, transformFn);
+
+
+
+      vector.x = currentSelection.x + (currentSelection.width + SPAWN_OFFSET)*NEW_POSITION_X;
+      vector.y = currentSelection.y + (currentSelection.height + SPAWN_OFFSET)*NEW_POSITION_Y -
+        (NEW_POSITION_Y === 0 ? (vector.height - currentSelection.height)/2 : 0);
+
+
+      //vector.fillGeometry = currentSelection.fillGeometry
+      //vector.strokeGeometry = currentSelection.strokeGeometry
+
       figma.viewport.scrollAndZoomIntoView([vector]);
+
+
     }
   };
 }
 
-const updateSelection = function(){
-  console.log(figma.currentPage.selection);
+const supportedTypes = {
+  VECTOR: 1,
+  RECTANGLE: 2,
+  ELLIPSE: 3,
+  STAR: 4,
+  POLYGON: 5,
+  TEXT: 6
+};
 
-  figma.ui.postMessage({type: 'selection', amount: figma.currentPage.selection.length})
+const updateSelection = function(){
+  if(figma.currentPage.selection.length) {
+    currentSelection = figma.currentPage.selection[0] as SceneNode & DefaultShapeMixin;
+  }
+
+  figma.ui.postMessage({
+    type: 'selection',
+    amount: figma.currentPage.selection.length, supported: currentSelection && (currentSelection.type in supportedTypes),
+    shapeType: currentSelection?.type
+  });
+
+
 };
 figma.on("selectionchange", updateSelection);
+figma.currentPage.on("nodechange", function(event){
+    console.log(event);
+});
+
+
+
 
 updateSelection();
