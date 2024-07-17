@@ -14,6 +14,14 @@ const squarePoints: PointArray3D[] = [
   [-1, -1, 0]
 ];
 
+function strokePolyline(ctx: CanvasRenderingContext2D, points: PointArray3D[]): void {
+  ctx.beginPath();
+  ctx.moveTo(points[0][0], points[0][1]);
+  for (let n = 1, _n = points.length; n < _n; n++) {
+    ctx.lineTo(points[n][0], points[n][1]);
+  }
+  ctx.stroke();
+}
 // update the preview
 export function redraw3D(): void {
   const {ctx, canvasSize, inputValues} = getDomCtx();
@@ -24,17 +32,31 @@ export function redraw3D(): void {
 
   let relativePoint = transform3D(...squarePoints[0]);
 
-  // draw transformed square
-  ctx.beginPath();
-  ctx.moveTo(relativePoint[0], relativePoint[1]);
-  for (let n = 0, _n = squarePoints.length; n < _n; n++) {
-    relativePoint = transform3D(...squarePoints[(n + 1) % _n]);
-    ctx.lineTo(relativePoint[0], relativePoint[1]);
-  }
-  ctx.closePath();
+  const localPoints: PointArray3D[] = squarePoints.map((point: PointArray3D) =>
+    transform3D(...point)
+  );
+
+  const backPartID = localPoints
+    .map((point, n: number) => {
+      return {point, n, z: point[2]};
+    })
+    .sort((p1, p2) => p1.z - p2.z)[0].n;
+
+  const backPoints = [-1, 0, 1].map(
+    (n) => localPoints[(backPartID + n + squarePoints.length) % squarePoints.length]
+  );
+
   ctx.strokeStyle = '#0c7dab';
   ctx.lineWidth = 3;
-  ctx.stroke();
+  strokePolyline(ctx, backPoints);
+
+  const frontPoints = [-1, 0, 1].map(
+    (n) =>
+      localPoints[
+        (backPartID + n + squarePoints.length + ((squarePoints.length / 2) | 0)) %
+          squarePoints.length
+      ]
+  );
 
   colliders.length = 0;
 
@@ -58,6 +80,12 @@ export function redraw3D(): void {
   drawCircleGizmo([0, 1], 'X', '#a80d0d', context, 37);
   drawCircleGizmo([0, 2], 'Y', '#2a9a12', context);
   drawCircleGizmo([1, 2], 'Z', '#15a0b7', context);
+
+  ctx.strokeStyle = '#0c7dab';
+  ctx.lineWidth = 3;
+  strokePolyline(ctx, frontPoints);
+
+
 }
 
 // Gizmo dragging
