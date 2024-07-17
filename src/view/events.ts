@@ -1,14 +1,8 @@
-import {getDomCtx} from './dom';
-import {PROJECTION, Transformation} from '../types';
-import {emptyFn} from '../util';
+import {getContext} from '../controller/context';
+import {Transformation} from '../types';
 
 import {previewMouseDown, previewMouseMove, redraw3D} from './preview';
-
-let afterInputUpdate: () => void = emptyFn;
-
-export const inputUpdated: () => void = () => {
-  afterInputUpdate();
-};
+import {PROJECTION, UPDATE_MODE} from '../constants/consts';
 
 export const listenEvents = function (): void {
   const {
@@ -18,8 +12,9 @@ export const listenEvents = function (): void {
     canvasSize,
     inputValues,
     inputElements,
-    updateInputValue
-  } = getDomCtx();
+    updateInputValue,
+    applyTransformation
+  } = getContext();
 
   const resize = function () {
     const rect = ui.previewEl.getBoundingClientRect();
@@ -29,35 +24,14 @@ export const listenEvents = function (): void {
   };
   window.addEventListener('resize', () => requestAnimationFrame(resize));
 
-  const applyTransformation = (instant?: boolean) => {
-    parent.postMessage(
-      {
-        pluginMessage: {
-          type: 'apply-transformation',
-          data: inputValues,
-          instant: instant || false
-        }
-      },
-      '*'
-    );
-  };
-
   ui.applyButton.addEventListener('click', () => applyTransformation());
 
   // instant feature
-  let instant = false;
   ui.isInstant.addEventListener('change', () => {
-    instant = (ui.isInstant as HTMLInputElement).checked;
+    const instant = (ui.isInstant as HTMLInputElement).checked;
+    updateInputValue('instant', instant ? UPDATE_MODE.INSTANT : UPDATE_MODE.MANUAL);
+
     ui.applyButton.classList[instant ? 'add' : 'remove']('button--hidden');
-    if (instant) {
-      applyTransformation(true);
-      afterInputUpdate = () => {
-        applyTransformation(true);
-        return void 0;
-      };
-    } else {
-      afterInputUpdate = emptyFn;
-    }
   });
 
   for (const elID in inputValues) {

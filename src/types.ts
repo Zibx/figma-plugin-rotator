@@ -1,15 +1,14 @@
-export enum PROJECTION {
-  ISOGRAPHIC = 2.5,
-  ORTHOGRAPHIC = 3
-}
+import {MESSAGE_TYPE, PROJECTION, UPDATE_MODE} from './constants/consts';
 
-export interface Transformation {
-  projection: PROJECTION; // isographic vs orthographic projection
+export type Transformation = {
+  [key: string]: number;
+  instant: UPDATE_MODE;
   X: number;
   Y: number;
   Z: number;
   scale: number;
-}
+  projection: PROJECTION; // isographic vs orthographic projection
+};
 
 export type CacheItem = {
   vector: VectorNode;
@@ -21,13 +20,7 @@ export type CacheItem = {
 export type PointArray = [number, number];
 export type PointArray3D = [number, number, number];
 
-export type rotateAndScalePrepareT = (x: number, y: number) => PointArray;
 export type rotateAndScalePrepare3DT = (x: number, y: number, z: number) => PointArray3D;
-
-export enum MESSAGE_TYPE {
-  selection = 'selection',
-  other = 'other'
-}
 
 export interface BasicMessage {
   type: MESSAGE_TYPE;
@@ -54,7 +47,4 @@ export type HTMLElementHash = {
 };
 export type InputHash = {
   [key: string]: HTMLInputElement;
-};
-export type InputValueHash = {
-  [key: string]: number;
 };

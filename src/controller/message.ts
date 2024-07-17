@@ -1,13 +1,14 @@
 import {BasicMessage, PluginMessage, SelectionMessage} from '../types';
 import {LOCALE} from '../constants/locale';
-import {getDomCtx} from '../view/dom';
+import {getContext} from './context';
 
 export function initMessageProcessor(): void {
-  const {hideMessage, showMessage} = getDomCtx();
+  const {hideMessage, showMessage, resetInputValues} = getContext();
 
   const messageProcess = {
     selection: function (msg: SelectionMessage) {
       if (msg.amount === 1 && msg.supported) {
+        resetInputValues();
         hideMessage();
         return;
       }

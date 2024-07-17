@@ -1,22 +1,38 @@
 import {HTMLElementHash, InputHash} from '../types';
 
+function getElement(selector: string): HTMLElement {
+  const el = document.querySelector(selector);
+  if (!(el instanceof HTMLElement)) {
+    throw new Error(`Element ${selector} not found`);
+  }
+  return el;
+}
+function getInputElement(selector: string): HTMLInputElement {
+  const el = getElement(selector);
+  if (!(el instanceof HTMLInputElement)) {
+    throw new Error(`Element ${selector} is not HTMLInputElement`);
+  }
+  return el;
+}
+
 export function collectUiElements(): HTMLElementHash {
   return {
-    objectNotSelected: document.querySelector('.object-not-selected') as HTMLElement,
-    annotation: document.querySelector('.annotation') as HTMLElement,
-    objectSelected: document.querySelector('.object-selected') as HTMLElement,
-    isInstant: document.querySelector('.is_instant') as HTMLElement,
-    applyButton: document.querySelector('.apply-button') as HTMLElement,
-    previewEl: document.body.querySelector('.preview-3d') as HTMLElement,
-    projection: document.querySelector('.is_3D') as HTMLElement
+    objectNotSelected: getElement('.object-not-selected'),
+    annotation: getElement('.annotation'),
+    objectSelected: getElement('.object-selected'),
+    isInstant: getElement('.is_instant'),
+    applyButton: getElement('.apply-button'),
+    previewEl: getElement('.preview-3d'),
+    projection: getElement('.is_3D'),
+    canvas: getElement('#canvas')
   };
 }
 
 export function collectInputs(): InputHash {
   return {
-    X: document.getElementById('X') as HTMLInputElement,
-    Y: document.getElementById('Y') as HTMLInputElement,
-    Z: document.getElementById('Z') as HTMLInputElement,
-    scale: document.getElementById('scale') as HTMLInputElement
+    X: getInputElement('#X'),
+    Y: getInputElement('#Y'),
+    Z: getInputElement('#Z'),
+    scale: getInputElement('#scale')
   };
 }

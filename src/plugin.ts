@@ -1,18 +1,8 @@
 import {POSITIONS} from './constants/position';
-import {
-  CacheItem,
-  PointArray,
-  PointArray3D,
-  rotateAndScalePrepare3DT,
-  rotateAndScalePrepareT,
-  Transformation
-} from './types';
-import {
-  rotateAndScalePrepare,
-  rotateAndScalePrepareObject,
-  rotateAndScalePreparePoint,
-  rotatePrepare3D
-} from './model/math';
+import {CacheItem, Transformation} from './types';
+import {debounce} from './util/debounce';
+import {transformPath} from './util/vectorPathsTransform';
+import {SUPPORTED_TYPES} from './constants/consts';
 
 const SPAWN_OFFSET = 16;
 
@@ -22,56 +12,15 @@ const NEW_POSITION_Y = POSITIONS[SPAWN_AT][1];
 
 let currentSelection: SceneNode & DefaultShapeMixin;
 
-const transformPath = function (
-  vectorPaths: VectorPaths,
-  transformation: Transformation,
-  widthHeight: PointArray
-): VectorPaths {
-  const transformFn = rotatePrepare3D(transformation, widthHeight);
-
-  const halfWidth = widthHeight[0] / 2;
-  const halfHeight = widthHeight[1] / 2;
-
-  return vectorPaths.map((path) => {
-    const newData = path.data.replace(/([ZCQML])([\d.])/g, '$1 $2').split(' ');
-    let point: PointArray3D = [0, 0, 0],
-      pointPointer = 0;
-
-    for (let i = 0, _i = newData.length; i < _i; i++) {
-      const token = newData[i];
-      if (!token) continue;
-      if (token === 'Z' || token === 'C' || token === 'Q' || token === 'M' || token === 'L') {
-        continue;
-      }
-
-      point[pointPointer] = parseFloat(token);
-      pointPointer++;
-      if (pointPointer === 2) {
-        point = transformFn((point[0] - halfWidth)/halfWidth, (point[1] - halfHeight)/halfHeight, 0);
-        newData[i - 1] = ((point[0] + halfWidth)*halfWidth).toString();
-        newData[i] = ((point[1] + halfHeight)*halfHeight).toString();
-
-        pointPointer = 0;
-      }
-    }
-
-    // debugger
-    return {
-      data: newData.join(' '),
-      windingRule: path.windingRule
-    };
-  });
-};
-
 const selectionMap = new WeakMap<BaseNode, CacheItem>();
-// Runs this code if the plugin is run in Figma
+
 if (figma.editorType === 'figma') {
   // Render plugin HTML
   figma.showUI(__html__, {themeColors: true});
   figma.ui.resize(300, 220);
 
   // Messages processing
-  figma.ui.onmessage = async (msg: {data: Transformation; type: string; instant: boolean}) => {
+  const messageHandler = async (msg: {data: Transformation; type: string; instant: boolean}) => {
     if (msg.type === 'apply-transformation') {
       let createNewVector = false,
         cached: CacheItem;
@@ -108,6 +57,9 @@ if (figma.editorType === 'figma') {
 
         let selectionPaths: VectorPaths;
 
+        // it may be a good idea to tune SUPPORTED_TYPES in a way that
+        // value would specify the approach of getting path data
+
         if (NodeType === 'VECTOR') {
           selectionPaths = (currentSelection as VectorNode).vectorPaths;
           await vector.setVectorNetworkAsync(currentSelection.vectorNetwork);
@@ -141,13 +93,8 @@ if (figma.editorType === 'figma') {
       vector = cached.vector;
       cached.transformation = msg.data;
 
-      // console.log(vector.vectorNetwork);
-      //console.log(currentSelection.vectorNetwork);
-
-      //vector.vectorNetwork = currentSelection.vectorNetwork
-
+      // VECTOR NETWORK APPROACH
       //const transformFn = rotateAndScalePrepareObject(msg.data);
-      console.log(vector.vectorNetwork);
       /*await vector.setVectorNetworkAsync({
         regions: cached.vectorNetwork.regions,
         segments: cached.vectorNetwork.segments.map((segment: VectorSegment) => ({
@@ -158,8 +105,6 @@ if (figma.editorType === 'figma') {
         })),
         vertices: cached.vectorNetwork.vertices.map(transformFn)
       });*/
-
-      //const transformFn = rotateAndScalePrepare(msg.data);
 
       vector.vectorPaths = transformPath(cached.paths, msg.data, [
         currentSelection.width,
@@ -172,22 +117,13 @@ if (figma.editorType === 'figma') {
         (currentSelection.height + SPAWN_OFFSET) * NEW_POSITION_Y -
         (NEW_POSITION_Y === 0 ? (vector.height - currentSelection.height) / 2 : 0);
 
-      //vector.fillGeometry = currentSelection.fillGeometry
-      //vector.strokeGeometry = currentSelection.strokeGeometry
-
       figma.viewport.scrollAndZoomIntoView([vector]);
     }
   };
-}
 
-const supportedTypes = {
-  VECTOR: 1,
-  RECTANGLE: 2,
-  ELLIPSE: 3,
-  STAR: 4,
-  POLYGON: 5,
-  TEXT: 6
-};
+  // wrap in debounce to have 30 FPS at max
+  figma.ui.onmessage = debounce(messageHandler, 30, false);
+}
 
 const updateSelection = function () {
   if (figma.currentPage.selection.length) {
@@ -197,7 +133,7 @@ const updateSelection = function () {
   figma.ui.postMessage({
     type: 'selection',
     amount: figma.currentPage.selection.length,
-    supported: currentSelection && currentSelection.type in supportedTypes,
+    supported: currentSelection && currentSelection.type in SUPPORTED_TYPES,
     shapeType: currentSelection?.type
   });
 };

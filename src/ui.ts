@@ -1,7 +1,7 @@
 import './ui.css';
-import {initDOM} from './view/dom';
+import {initDOM} from './controller/context';
 import {listenEvents} from './view/events';
-import {initMessageProcessor} from './model/message';
+import {initMessageProcessor} from './controller/message';
 
 initDOM().then(() => {
   listenEvents();
