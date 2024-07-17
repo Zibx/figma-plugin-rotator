@@ -1,5 +1,15 @@
-import {HTMLElementHash, InputHash, PointArray, Transformation} from '../types';
+import {HTMLElementHash, InputHash, PointArray, PROJECTION, Transformation} from '../types';
 import {collectInputs, collectUiElements} from './elements';
+import {redraw3D} from './preview';
+import {inputUpdated} from './events';
+
+export const INITIAL_VALUES: Transformation = {
+  X: 0,
+  Y: 0,
+  Z: 0,
+  scale: 1,
+  projection: PROJECTION.ORTHOGRAPHIC
+};
 
 export type uiCTX = {
   canvas: HTMLCanvasElement;
@@ -11,19 +21,12 @@ export type uiCTX = {
   inputValues: Transformation;
   hideMessage: () => void;
   showMessage: (text: string) => void;
+  updateInputValue: (key: keyof Transformation, val: number) => void;
   loaded: Promise<boolean>;
 };
 
 let uiContext: uiCTX;
-let inputElementsCache: InputHash;
-let inputValues: Transformation = {X: 0, Y: 0, Z: 0, scale: 1};
-
-const resetInputValues = function(): void {
-  inputValues = {X: 0, Y: 0, Z: 0, scale: 1};
-  for (const key in inputValues) {
-    inputElementsCache[key].value = inputValues[key as keyof Transformation].toString();
-  }
-};
+const inputValues: Transformation = {...INITIAL_VALUES};
 
 const loaded = new Promise<boolean>(function (resolve) {
   window.addEventListener('load', () => {
@@ -32,7 +35,7 @@ const loaded = new Promise<boolean>(function (resolve) {
 });
 
 export function initDOM(): Promise<boolean> {
-  loaded.then((_) => {
+  loaded.then(() => {
     const canvas = document.getElementById('canvas') as HTMLCanvasElement;
     const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
     // Collect all DOM input elements
@@ -43,7 +46,31 @@ export function initDOM(): Promise<boolean> {
       ctx: ctx,
       canvasSize: [64, 64],
       inputValues: inputValues,
-      resetInputValues: resetInputValues,
+      updateInputValue: function (key: keyof Transformation, val: number) {
+        if (isNaN(val)) {
+          val = 0;
+        }
+        inputValues[key] = val;
+        if (key in uiContext.inputElements) {
+          uiContext.inputElements[key].value = val.toString();
+        }
+        redraw3D();
+        inputUpdated();
+        //afterInputUpdate();
+      },
+      resetInputValues: function (): void {
+        for (const key in INITIAL_VALUES) {
+          uiContext.updateInputValue(
+            key as keyof Transformation,
+            INITIAL_VALUES[key as keyof Transformation]
+          );
+
+          if (key in uiContext.inputElements) {
+            uiContext.inputElements[key].value =
+              inputValues[key as keyof Transformation].toString();
+          }
+        }
+      },
       hideMessage: function () {
         uiContext.ui.objectNotSelected.style.display = 'none';
         uiContext.ui.objectSelected.style.display = 'block';
@@ -51,6 +78,7 @@ export function initDOM(): Promise<boolean> {
       showMessage: function (text: string) {
         uiContext.ui.objectNotSelected.style.display = 'block';
         uiContext.ui.objectSelected.style.display = 'none';
+        uiContext.ui.annotation.innerText = text;
       },
       loaded: loaded
     };

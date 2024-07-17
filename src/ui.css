@@ -56,6 +56,7 @@ label {
 }
 .preview-3d {
     flex-grow: 1;
+    position: relative;
 }
 .button--hidden {
     display: none;
@@ -63,4 +64,30 @@ label {
 .flex {
     display: flex;
     gap: 8px;
+}
+
+.circle-gizmo {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translateX(-50%) translateY(-50%);
+    border-radius: 50%;
+    border-width: 2px;
+    border-style: solid;
+    width: 48px;
+    height: 48px;
+    box-sizing: border-box;
+}
+.gizmo-x {
+    border-color: #cc0000;
+}
+.gizmo-y {
+    border-color: #4dbd00;
+}
+.gizmo-z {
+    border-color: #33c6d9;
+}
+
+.checkbox__label {
+    padding-right: 0 !important;
 }

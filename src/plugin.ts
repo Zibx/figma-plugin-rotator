@@ -1,6 +1,18 @@
 import {POSITIONS} from './constants/position';
-import {CacheItem, PointArray, rotateAndScalePrepareT, Transformation} from './types';
-import {rotateAndScalePrepare} from './math';
+import {
+  CacheItem,
+  PointArray,
+  PointArray3D,
+  rotateAndScalePrepare3DT,
+  rotateAndScalePrepareT,
+  Transformation
+} from './types';
+import {
+  rotateAndScalePrepare,
+  rotateAndScalePrepareObject,
+  rotateAndScalePreparePoint,
+  rotatePrepare3D
+} from './model/math';
 
 const SPAWN_OFFSET = 16;
 
@@ -12,11 +24,17 @@ let currentSelection: SceneNode & DefaultShapeMixin;
 
 const transformPath = function (
   vectorPaths: VectorPaths,
-  transformFn: rotateAndScalePrepareT
+  transformation: Transformation,
+  widthHeight: PointArray
 ): VectorPaths {
+  const transformFn = rotatePrepare3D(transformation, widthHeight);
+
+  const halfWidth = widthHeight[0] / 2;
+  const halfHeight = widthHeight[1] / 2;
+
   return vectorPaths.map((path) => {
     const newData = path.data.replace(/([ZCQML])([\d.])/g, '$1 $2').split(' ');
-    let point: PointArray = [0, 0],
+    let point: PointArray3D = [0, 0, 0],
       pointPointer = 0;
 
     for (let i = 0, _i = newData.length; i < _i; i++) {
@@ -29,14 +47,13 @@ const transformPath = function (
       point[pointPointer] = parseFloat(token);
       pointPointer++;
       if (pointPointer === 2) {
-        point = transformFn(point[0], point[1]);
-        newData[i - 1] = point[0].toString();
-        newData[i] = point[1].toString();
+        point = transformFn((point[0] - halfWidth)/halfWidth, (point[1] - halfHeight)/halfHeight, 0);
+        newData[i - 1] = ((point[0] + halfWidth)*halfWidth).toString();
+        newData[i] = ((point[1] + halfHeight)*halfHeight).toString();
 
         pointPointer = 0;
       }
     }
-
 
     // debugger
     return {
@@ -54,7 +71,7 @@ if (figma.editorType === 'figma') {
   figma.ui.resize(300, 220);
 
   // Messages processing
-  figma.ui.onmessage = (msg: {data: Transformation; type: string; instant: boolean}) => {
+  figma.ui.onmessage = async (msg: {data: Transformation; type: string; instant: boolean}) => {
     if (msg.type === 'apply-transformation') {
       let createNewVector = false,
         cached: CacheItem;
@@ -83,7 +100,7 @@ if (figma.editorType === 'figma') {
         // copy stroke style
         vector.strokes = currentSelection.strokes;
         vector.strokeAlign = currentSelection.strokeAlign;
-        vector.strokeCap = currentSelection.strokeCap;
+        // vector.strokeCap = currentSelection.strokeCap;
         vector.strokeJoin = currentSelection.strokeJoin;
         vector.strokeMiterLimit = currentSelection.strokeMiterLimit;
         vector.strokeWeight = currentSelection.strokeWeight;
@@ -93,6 +110,7 @@ if (figma.editorType === 'figma') {
 
         if (NodeType === 'VECTOR') {
           selectionPaths = (currentSelection as VectorNode).vectorPaths;
+          await vector.setVectorNetworkAsync(currentSelection.vectorNetwork);
         } else if (
           NodeType === 'RECTANGLE' ||
           NodeType === 'ELLIPSE' ||
@@ -109,11 +127,11 @@ if (figma.editorType === 'figma') {
 
         figma.currentPage.appendChild(vector);
 
-        debugger;
         cached = {
           vector,
           transformation: msg.data,
-          paths: selectionPaths
+          paths: selectionPaths,
+          vectorNetwork: vector.vectorNetwork
         };
         selectionMap.set(currentSelection, cached);
       }
@@ -128,8 +146,25 @@ if (figma.editorType === 'figma') {
 
       //vector.vectorNetwork = currentSelection.vectorNetwork
 
-      const transformFn = rotateAndScalePrepare(msg.data);
-      vector.vectorPaths = transformPath(cached.paths, transformFn);
+      //const transformFn = rotateAndScalePrepareObject(msg.data);
+      console.log(vector.vectorNetwork);
+      /*await vector.setVectorNetworkAsync({
+        regions: cached.vectorNetwork.regions,
+        segments: cached.vectorNetwork.segments.map((segment: VectorSegment) => ({
+          start: segment.start,
+          end: segment.end,
+          tangentEnd: segment.tangentEnd && transformFn(segment.tangentEnd),
+          tangentStart: segment.tangentStart && transformFn(segment.tangentStart)
+        })),
+        vertices: cached.vectorNetwork.vertices.map(transformFn)
+      });*/
+
+      //const transformFn = rotateAndScalePrepare(msg.data);
+
+      vector.vectorPaths = transformPath(cached.paths, msg.data, [
+        currentSelection.width,
+        currentSelection.height
+      ]);
 
       vector.x = currentSelection.x + (currentSelection.width + SPAWN_OFFSET) * NEW_POSITION_X;
       vector.y =
@@ -168,8 +203,10 @@ const updateSelection = function () {
 };
 
 figma.on('selectionchange', updateSelection);
-figma.currentPage.on('nodechange', function (event) {
+
+// TODO watch changes of the original object
+/*figma.currentPage.on('nodechange', function (event) {
   console.log(event);
-});
+});*/
 
 updateSelection();

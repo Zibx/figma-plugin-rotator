@@ -1,6 +1,7 @@
 import {BasicMessage, PluginMessage, SelectionMessage} from '../types';
 import {LOCALE} from '../constants/locale';
 import {getDomCtx} from '../view/dom';
+
 export function initMessageProcessor(): void {
   const {hideMessage, showMessage} = getDomCtx();
 

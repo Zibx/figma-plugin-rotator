@@ -7,7 +7,8 @@ export function collectUiElements(): HTMLElementHash {
     objectSelected: document.querySelector('.object-selected') as HTMLElement,
     isInstant: document.querySelector('.is_instant') as HTMLElement,
     applyButton: document.querySelector('.apply-button') as HTMLElement,
-    previewEl: document.body.querySelector('.preview-3d') as HTMLElement
+    previewEl: document.body.querySelector('.preview-3d') as HTMLElement,
+    projection: document.querySelector('.is_3D') as HTMLElement
   };
 }
 

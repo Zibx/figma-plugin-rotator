@@ -1,10 +1,25 @@
 import {getDomCtx} from './dom';
-import {Transformation} from '../types';
+import {PROJECTION, Transformation} from '../types';
 import {emptyFn} from '../util';
-import {redraw3D} from './preview';
+
+import {previewMouseDown, previewMouseMove, redraw3D} from './preview';
+
+let afterInputUpdate: () => void = emptyFn;
+
+export const inputUpdated: () => void = () => {
+  afterInputUpdate();
+};
 
 export const listenEvents = function (): void {
-  const {ui, canvas, canvasSize, inputValues, inputElements} = getDomCtx();
+  const {
+    // get elements
+    ui,
+    canvas,
+    canvasSize,
+    inputValues,
+    inputElements,
+    updateInputValue
+  } = getDomCtx();
 
   const resize = function () {
     const rect = ui.previewEl.getBoundingClientRect();
@@ -29,8 +44,6 @@ export const listenEvents = function (): void {
 
   ui.applyButton.addEventListener('click', () => applyTransformation());
 
-  let afterInputUpdate = emptyFn;
-
   // instant feature
   let instant = false;
   ui.isInstant.addEventListener('change', () => {
@@ -48,13 +61,22 @@ export const listenEvents = function (): void {
   });
 
   for (const elID in inputValues) {
-    const updateInputValue = function () {
-      inputValues[elID as keyof Transformation] = parseFloat(inputElements[elID].value);
-      redraw3D();
-      afterInputUpdate();
-    };
-    inputElements[elID].addEventListener('input', updateInputValue);
+    if (elID in inputElements) {
+      inputElements[elID].addEventListener('input', function () {
+        updateInputValue(elID as keyof Transformation, parseFloat(inputElements[elID].value));
+      });
+    }
   }
+
+  ui.projection.addEventListener('change', () => {
+    const is3D = (ui.projection as HTMLInputElement).checked;
+    updateInputValue('projection', is3D ? PROJECTION.ORTHOGRAPHIC : PROJECTION.ISOGRAPHIC);
+  });
+
+  (ui.projection as HTMLInputElement).checked = inputValues.projection === PROJECTION.ORTHOGRAPHIC;
+
+  canvas.addEventListener('mousemove', previewMouseMove);
+  canvas.addEventListener('mousedown', previewMouseDown);
 
   resize();
 };
