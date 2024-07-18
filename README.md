@@ -1,5 +1,7 @@
 # Figma vector rotation plugin
 
+https://github.com/user-attachments/assets/397913ac-290a-4a25-813f-0384905df83a
+
 This plugin performs rotation of the selected shape in a 3D space.
 
 # [Code Documentation](./DOC.md)
@@ -14,7 +16,7 @@ Install the TypeScript globally:
 npm install -g typescript
 ```
 
-Clone the repo and do `npm i` or `yarn` depending on package manager that you use.
+Clone the repo and do `npm i` or `yarn` depending on the package manager that you use.
 
 ```shell
 npm i
