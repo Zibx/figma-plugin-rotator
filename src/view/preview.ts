@@ -1,26 +1,27 @@
 import {getContext} from '../controller/context';
-import {degToRad, radToDeg, rotatePrepare3D} from '../model/math';
-import {PointArray, PointArray3D, Transformation} from '../types';
+import {radToDeg, rotatePrepare3D} from '../model/math';
+import {Transformation} from '../types';
 import {CollidePoint, drawCircleGizmo, GizmoContext} from './previewCircleGizmo';
 import {debounceAnimationFrame} from '../util/debounce';
 import {PROJECTION} from '../constants/consts';
+import {Point} from '../util/Point';
 export const AXIS_NOT_SELECTED = 'N';
 
 const colliders: CollidePoint[] = [];
 let activeGizmo = AXIS_NOT_SELECTED;
 
-const squarePoints: PointArray3D[] = [
-  [-1, 1, 0],
-  [1, 1, 0],
-  [1, -1, 0],
-  [-1, -1, 0]
+const squarePoints: Point[] = [
+  new Point(-1, 1),
+  new Point(1, 1),
+  new Point(1, -1),
+  new Point(-1, -1)
 ];
 
-function strokePolyline(ctx: CanvasRenderingContext2D, points: PointArray3D[]): void {
+function strokePolyline(ctx: CanvasRenderingContext2D, points: Point[]): void {
   ctx.beginPath();
-  ctx.moveTo(points[0][0], points[0][1]);
+  ctx.moveTo(points[0].x, points[0].y);
   for (let n = 1, _n = points.length; n < _n; n++) {
-    ctx.lineTo(points[n][0], points[n][1]);
+    ctx.lineTo(points[n].x, points[n].y);
   }
   ctx.stroke();
 }
@@ -28,17 +29,15 @@ function strokePolyline(ctx: CanvasRenderingContext2D, points: PointArray3D[]): 
 export const redraw3D = debounceAnimationFrame(
   function redraw3D(): void {
     const {ctx, canvasSize, inputValues} = getContext();
-    ctx.clearRect(0, 0, canvasSize[0], canvasSize[1]);
+    ctx.clearRect(0, 0, canvasSize.x, canvasSize.y);
 
-    const transform3D = rotatePrepare3D({...inputValues, scale: canvasSize[0] / 4}, canvasSize);
+    const transform3D = rotatePrepare3D({...inputValues, scale: canvasSize.x / 4}, canvasSize);
 
-    const localPoints: PointArray3D[] = squarePoints.map((point: PointArray3D) =>
-      transform3D(...point)
-    );
+    const localPoints: Point[] = squarePoints.map((point: Point) => transform3D(point));
 
     const backPartID = localPoints
       .map((point, n: number) => {
-        return {point, n, z: point[2]};
+        return {point, n, z: point.z};
       })
       .sort((p1, p2) => p1.z - p2.z)[0].n;
 
@@ -92,7 +91,7 @@ export const redraw3D = debounceAnimationFrame(
 
 // Gizmo dragging
 let mousePressed = false;
-const startPoint: PointArray = [0, 0];
+const startPoint: Point = new Point();
 
 export const previewMouseMove = function (e: MouseEvent): void {
   if (mousePressed) {
@@ -102,13 +101,11 @@ export const previewMouseMove = function (e: MouseEvent): void {
   let minDistance = Infinity,
     minPoint: CollidePoint = colliders[0],
     distance;
-  const mousePoint = [e.offsetX, e.offsetY];
+  const mousePoint = new Point(e.offsetX, e.offsetY);
 
   for (let n = 0, _n = colliders.length; n < _n; n++) {
-    distance = Math.hypot(
-      mousePoint[0] - colliders[n].point[0],
-      mousePoint[1] - colliders[n].point[1]
-    );
+    distance = mousePoint.sub(colliders[n].point).length();
+
     if (distance < minDistance) {
       minDistance = distance;
       minPoint = colliders[n];
@@ -131,26 +128,20 @@ export const previewMouseDown = function (e: MouseEvent): void {
   mousePressed = true;
   const {inputValues, updateInputValue, canvasSize} = getContext();
   const initialValue = inputValues[activeGizmo as keyof Transformation];
-  const initialOffset: PointArray = [e.offsetX - canvasSize[0] / 2, e.offsetY - canvasSize[1] / 2];
+  const initialOffset = new Point(e.offsetX - canvasSize.x / 2, e.offsetY - canvasSize.y / 2);
 
-  console.log(activeGizmo, initialValue);
-
-  startPoint[0] = e.clientX;
-  startPoint[1] = e.clientY;
+  startPoint.x = e.clientX;
+  startPoint.y = e.clientY;
 
   const windowMoveHandler = (e: MouseEvent) => {
-    const delta: PointArray = [startPoint[0] - e.clientX, startPoint[1] - e.clientY];
+    const delta = startPoint.sub(e.clientX, e.clientY);
     let newVal = initialValue;
     if (activeGizmo === 'Y') {
-      newVal += -delta[0];
+      newVal += -delta.x;
     } else if (activeGizmo === 'Z') {
-      newVal += delta[1];
+      newVal += delta.y;
     } else {
-      newVal = radToDeg(
-        Math.atan2(...initialOffset) -
-          Math.atan2(initialOffset[0] - delta[0], initialOffset[1] - delta[1]) +
-          degToRad(initialValue)
-      );
+      newVal = radToDeg(initialOffset.atan2() - initialOffset.sub(delta).atan2()) + initialValue;
     }
 
     updateInputValue(activeGizmo as keyof Transformation, Math.round(newVal) % 360);

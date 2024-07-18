@@ -1,4 +1,5 @@
 import {MESSAGE_TYPE, PROJECTION, UPDATE_MODE} from './constants/consts';
+import {Point} from './util/Point';
 
 export type Transformation = {
   [key: string]: number;
@@ -10,17 +11,7 @@ export type Transformation = {
   projection: PROJECTION; // isographic vs orthographic projection
 };
 
-export type CacheItem = {
-  vector: VectorNode;
-  transformation: Transformation;
-  paths: VectorPaths;
-  vectorNetwork: VectorNetwork;
-};
-
-export type PointArray = [number, number];
-export type PointArray3D = [number, number, number];
-
-export type rotateAndScalePrepare3DT = (x: number, y: number, z: number) => PointArray3D;
+export type rotateAndScalePrepare3DT = (point: Point) => Point;
 
 export interface BasicMessage {
   type: MESSAGE_TYPE;
@@ -30,6 +21,7 @@ export interface SelectionMessage extends BasicMessage {
   supported: boolean;
   amount: number;
   shapeType: string;
+  transformation: Transformation | undefined;
 }
 
 export type PluginMessage = {

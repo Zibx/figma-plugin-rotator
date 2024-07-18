@@ -50,6 +50,7 @@ label {
     align-items: center;
     justify-content: center;
     font-size: 1.3em;
+    text-align: center;
 }
 .object-not-selected {
     display: none;
@@ -59,7 +60,7 @@ label {
     position: relative;
 }
 .button--hidden {
-    display: none;
+    display: none !important;
 }
 .flex {
     display: flex;

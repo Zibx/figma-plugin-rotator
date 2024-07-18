@@ -1,0 +1,22 @@
+- [x] Support for `Figma` Dark and light color schemes support
+- [x] Copy of Vector Node
+- [x] Rotation of Vector Node
+- [x] Rotation of Rectangle, Ellipse, Star, Polygon
+- [x] Rotation of Text Node
+- [x] Preview of rotation plane
+- [x] Instant rotation feature
+- [x] Switch to webpack for project refactoring
+- [x] Refactor UI code to TS
+- [x] Refactor the whole code
+- [x] Hide the Apply button when instant feature is activated
+- [x] 3D projection of preview
+- [x] 3D projection of the result
+- [x] Create simple Point class
+- [x] Switch from [x,y] arrays to `Point` class
+- [x] Debounce Figma update
+- [x] Logo
+- [ ] Store plugin data in the element
+- [ ] Create Property panel button for open the plugin in generated objects
+- [x] Rotation without scaling into original frame for 2D
+- [ ] Watch changes on the original object
+- [ ] Change input values by dragging labels 

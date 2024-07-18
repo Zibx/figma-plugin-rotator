@@ -1,5 +1,6 @@
-import {PointArray, PointArray3D, rotateAndScalePrepare3DT, Transformation} from '../types';
+import {rotateAndScalePrepare3DT, Transformation} from '../types';
 import {PROJECTION} from '../constants/consts';
+import {Point} from '../util/Point';
 
 export const degToRad = function (val: number): number {
   return (val / 180) * Math.PI;
@@ -11,7 +12,7 @@ export const radToDeg = function (val: number): number {
 
 export const rotatePrepare3D = function (
   inputValues: Transformation,
-  canvasSize: PointArray
+  canvasSize: Point
 ): rotateAndScalePrepare3DT {
   const rotateX = degToRad(inputValues.X),
     rotateY = degToRad(inputValues.Y),
@@ -40,12 +41,12 @@ export const rotatePrepare3D = function (
   const Azy = cosb * sinc;
   const Azz = cosb * cosc;
 
-  return function (x, y, z) {
-    const result: PointArray3D = [
+  return function ({x, y, z}: Point) {
+    const result = new Point(
       Axx * x + Axy * y + Axz * z,
       Ayx * x + Ayy * y + Ayz * z,
       Azx * x + Azy * y + Azz * z
-    ];
+    );
 
     if (inputValues.projection === PROJECTION.ISOGRAPHIC) {
       return relative2D(result, canvasSize, scale);
@@ -55,22 +56,14 @@ export const rotatePrepare3D = function (
   };
 };
 
-const relative3D = function (
-  [x, y, z = 0]: PointArray | PointArray3D,
-  [w, h]: PointArray,
-  localScale = 1
-): PointArray3D {
-  x = (x * localScale) / (1 - z / 3) + w / 2;
-  y = (y * localScale) / (1 - z / 3) + h / 2;
-  return [x, y, z];
+const relative3D = function ({x, y, z}: Point, {x: w, y: h}: Point, localScale = 1): Point {
+  return new Point(
+    (x * localScale) / (1 - z / 3) + w / 2,
+    (y * localScale) / (1 - z / 3) + h / 2,
+    z
+  );
 };
 
-const relative2D = function (
-  [x, y, z = 0]: PointArray | PointArray3D,
-  [w, h]: PointArray = [179, 172],
-  localScale = 1
-): PointArray3D {
-  x = x * localScale + w / 2;
-  y = y * localScale + h / 2;
-  return [x, y, z];
+const relative2D = function ({x, y, z}: Point, {x: w, y: h}: Point, localScale = 1): Point {
+  return new Point(x * localScale + w / 2, y * localScale + h / 2, z);
 };

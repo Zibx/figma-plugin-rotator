@@ -23,3 +23,11 @@ While development stage use the `watch` script. It would automatically reload th
 ```shell
 npm start watch
 ```
+
+# Launch the plugin
+
+While `watch` script is activated
+
+From the main menu select `Plugins` > `Development` > `Import plugin from manifest` and navigate to the repo folder, then choose the `manifest.json` file.
+
+# [TODO list](./TODO.md)

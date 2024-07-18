@@ -1,15 +1,16 @@
-import {HTMLElementHash, InputHash, PointArray, Transformation} from '../types';
+import {HTMLElementHash, InputHash, Transformation} from '../types';
 import {collectInputs, collectUiElements} from '../view/elements';
 import {redraw3D} from '../view/preview';
 import {INITIAL_VALUES, PROJECTION, UPDATE_MODE} from '../constants/consts';
+import {Point} from '../util/Point';
 
 export type uiCTX = {
   canvas: HTMLCanvasElement;
   ui: HTMLElementHash;
   inputElements: InputHash;
   ctx: CanvasRenderingContext2D;
-  canvasSize: PointArray;
-  resetInputValues: () => void;
+  canvasSize: Point;
+  resetInputValues: (transformation: Transformation | undefined) => void;
   inputValues: Transformation;
   hideMessage: () => void;
   applyTransformation: () => void;
@@ -38,7 +39,7 @@ export function initDOM(): Promise<boolean> {
       ui: uiElements,
       inputElements: collectInputs(),
       ctx: ctx,
-      canvasSize: [64, 64],
+      canvasSize: new Point(64, 64),
       inputValues: inputValues,
       applyTransformation: (instant?: boolean) => {
         parent.postMessage(
@@ -66,6 +67,13 @@ export function initDOM(): Promise<boolean> {
             (uiElements.projection as HTMLInputElement).checked = val === PROJECTION.ORTHOGRAPHIC;
           } else if (key === 'instant') {
             (uiElements.isInstant as HTMLInputElement).checked = val === UPDATE_MODE.INSTANT;
+
+            // hide Apply button if in instant mode
+            if (val === UPDATE_MODE.INSTANT) {
+              uiElements.applyButton.classList.add('button--hidden');
+            } else {
+              uiElements.applyButton.classList.remove('button--hidden');
+            }
           }
         }
         redraw3D();

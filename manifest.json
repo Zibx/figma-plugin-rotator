@@ -1,5 +1,5 @@
 {
-  "name": "rotation-plugin",
+  "name": "Rotator",
   "id": "1392492182555341965",
   "api": "1.0.0",
   "main": "dist/plugin.js",

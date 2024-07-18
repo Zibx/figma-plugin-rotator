@@ -1,14 +1,15 @@
-import {BasicMessage, PluginMessage, SelectionMessage} from '../types';
+import {PluginMessage, SelectionMessage} from '../types';
 import {LOCALE} from '../constants/locale';
 import {getContext} from './context';
+import {MESSAGE_TYPE} from '../constants/consts';
 
 export function initMessageProcessor(): void {
   const {hideMessage, showMessage, resetInputValues} = getContext();
 
   const messageProcess = {
-    selection: function (msg: SelectionMessage) {
+    [MESSAGE_TYPE.SELECTION]: function (msg: SelectionMessage) {
       if (msg.amount === 1 && msg.supported) {
-        resetInputValues();
+        resetInputValues(msg.transformation);
         hideMessage();
         return;
       }
@@ -19,20 +20,22 @@ export function initMessageProcessor(): void {
         showMessage(LOCALE.NOT_SUPPORTED(msg));
       }
     },
-    other: function (value: BasicMessage) {
-      console.warn('Unknown message from plugin to UI', value);
+    [MESSAGE_TYPE.OTHER]: function ({type}: SelectionMessage) {
+      console.warn('Unknown message from plugin to UI', type);
     }
   };
 
   onmessage = (event: MessageEvent<PluginMessage>) => {
-    const type = event?.data?.pluginMessage?.type;
+    const msg = event?.data?.pluginMessage;
+    const type: MESSAGE_TYPE = event?.data?.pluginMessage?.type;
     if (!type) {
       throw new Error('Something wrong with message ' + JSON.stringify(event?.data));
     }
+
     if (type in messageProcess) {
-      messageProcess[type](event.data.pluginMessage);
+      messageProcess[type](msg);
     } else {
-      messageProcess['other'](event.data.pluginMessage);
+      messageProcess[MESSAGE_TYPE.OTHER](msg);
     }
   };
 }

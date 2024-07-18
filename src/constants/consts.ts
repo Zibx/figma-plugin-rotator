@@ -11,8 +11,8 @@ export enum UPDATE_MODE {
 }
 
 export enum MESSAGE_TYPE {
-  selection = 'selection',
-  other = 'other'
+  SELECTION = 'SELECTION',
+  OTHER = 'OTHER'
 }
 
 export enum SUPPORTED_TYPES {

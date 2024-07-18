@@ -18,8 +18,8 @@ export const listenEvents = function (): void {
 
   const resize = function () {
     const rect = ui.previewEl.getBoundingClientRect();
-    canvasSize[0] = canvas.width = rect.width;
-    canvasSize[1] = canvas.height = rect.height;
+    canvasSize.x = canvas.width = rect.width;
+    canvasSize.y = canvas.height = rect.height;
     requestAnimationFrame(redraw3D);
   };
   window.addEventListener('resize', () => requestAnimationFrame(resize));
