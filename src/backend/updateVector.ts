@@ -1,6 +1,6 @@
 import {transformPath} from '../util/vectorPathsTransform';
 import {Point} from '../util/Point';
-import {POSITIONS} from '../constants/position';
+import {POSITIONS} from '../constants/consts';
 import {CacheItem} from './getCachedNode';
 
 const SPAWN_OFFSET = 16;

@@ -1,5 +1,5 @@
 import {Transformation} from '../types';
-import {rotatePrepare3D} from '../model/math';
+import {rotatePrepare3D} from './math';
 import {Point} from './Point';
 import {PROJECTION} from '../constants/consts';
 

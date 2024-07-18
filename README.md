@@ -2,6 +2,8 @@
 
 This plugin performs rotation of the selected shape in a 3D space.
 
+# [Code Documentation](./DOC.md)
+
 # Installation for development
 
 You MUST have node.js version >= 18. It is convenient to use [nvm](https://github.com/nvm-sh/nvm) for install\switch node.js versions.
@@ -21,12 +23,19 @@ npm i
 While development stage use the `watch` script. It would automatically reload the plugin when any changes are made:
 
 ```shell
-npm start watch
+npm run watch
 ```
+
+# Build production
+
+```shell
+npm run build
+```
+
 
 # Launch the plugin
 
-While `watch` script is activated
+After the run of `watch` or `build` command:
 
 From the main menu select `Plugins` > `Development` > `Import plugin from manifest` and navigate to the repo folder, then choose the `manifest.json` file.
 

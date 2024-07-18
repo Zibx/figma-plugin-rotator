@@ -1,5 +1,5 @@
 import {getContext} from '../controller/context';
-import {radToDeg, rotatePrepare3D} from '../model/math';
+import {radToDeg, rotatePrepare3D} from '../util/math';
 import {Transformation} from '../types';
 import {CollidePoint, drawCircleGizmo, GizmoContext} from './previewCircleGizmo';
 import {debounceAnimationFrame} from '../util/debounce';

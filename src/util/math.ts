@@ -1,6 +1,6 @@
 import {rotateAndScalePrepare3DT, Transformation} from '../types';
 import {PROJECTION} from '../constants/consts';
-import {Point} from '../util/Point';
+import {Point} from './Point';
 
 export const degToRad = function (val: number): number {
   return (val / 180) * Math.PI;
