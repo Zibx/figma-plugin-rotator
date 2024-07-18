@@ -8,7 +8,7 @@ Now let's go down into the 📁`src`
 
 ## Generic
 
-### 📁`constants`
+### 📁`src/constants`
 - `locale.ts` — UI text strings
 - `consts.ts` — enums and `Initial Transform`
 
@@ -41,13 +41,13 @@ Now let's go down into the 📁`src`
 - `ui.html` — simple HTML code for the whole plugin. I can spawn elements from js, but tried to keep it simple
 - `ui.css` — styles
 
-### 📁`view`
+### 📁`src/view`
 - `elements.ts` — collect all necessary elements from DOM
 - `events.ts` — listen to DOM events on collected elements, on window. When value changes — delivers that value to the main context controller via calling the delegate `updateInputValue(key, val)`
 - `preview.ts` — drawing preview on canvas, handling canvas events (gizmos are not in dom, they are just drawn)
 - `previewCircleGizmo.ts` — method for drawing gizmo with applied 3D Transformation. Also, it stores gizmo colliders coordinates. I used a simple approach — each gizmo is made from line segments, and there are ~20 points in each segment. By storing this points with corresponding X\Y\Z axis we can later just find the nearest point to the cursor with some limits like `distance < 7`
 
-### 📁`controller`
+### 📁`src/controller`
 - `context.ts` — glue between all parts. Have methods like show\hide message, `updateInputValue`, send message to backend when needed
 - `message.ts` — listen for messages from the backend. When selection is changed — it resets all inputs to initial (or received) state
 
