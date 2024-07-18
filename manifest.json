@@ -1,10 +1,8 @@
 {
   "name": "Rotator",
   "id": "1392492182555341965",
-  "api": "0.0.1",
+  "api": "1.0.0",
   "main": "dist/plugin.js",
-  "author": "Ivan Kubota",
-  "capabilities": ["3D rotation", "rotation"],
   "enableProposedApi": false,
   "documentAccess": "dynamic-page",
   "editorType": ["figma"],
