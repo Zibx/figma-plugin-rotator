@@ -1,14 +1,37 @@
-import {PluginMessage, SelectionMessage} from '../types';
+import {BasicMessage, PluginMessage, SelectionMessage} from '../types';
 import {LOCALE} from '../constants/locale';
 import {getContext} from './context';
 import {MESSAGE_TYPE} from '../constants/consts';
 
 export function initMessageProcessor(): void {
-  const {hideMessage, showMessage, resetInputValues} = getContext();
+  const {
+    hideMessage,
+    showMessage,
+    resetInputValues,
+    showUpdatePathButton,
+    hideUpdatePathButton,
+    showCloneDialog,
+    hideCloneDialog,
+    showObjectModificationDialog,
+    hideObjectModificationDialog
+  } = getContext();
 
   const messageProcess = {
+    [MESSAGE_TYPE.ORIGINAL_PATH_UPDATED]: function () {
+      showUpdatePathButton();
+    },
     [MESSAGE_TYPE.SELECTION]: function (msg: SelectionMessage) {
+      hideUpdatePathButton();
+
+      hideMessage();
+      hideObjectModificationDialog();
+      hideCloneDialog();
       if (msg.amount === 1 && msg.supported) {
+        if (!msg.transformation) {
+          showCloneDialog();
+        } else {
+          showObjectModificationDialog();
+        }
         resetInputValues(msg.transformation);
         hideMessage();
         return;
@@ -32,8 +55,11 @@ export function initMessageProcessor(): void {
       throw new Error('Something wrong with message ' + JSON.stringify(event?.data));
     }
 
+    console.log('Message to UI', msg);
+
     if (type in messageProcess) {
-      messageProcess[type](msg);
+      const callback: (msg: BasicMessage) => void = messageProcess[type as never];
+      callback(msg);
     } else {
       messageProcess[MESSAGE_TYPE.OTHER](msg);
     }

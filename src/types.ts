@@ -24,6 +24,10 @@ export interface SelectionMessage extends BasicMessage {
   transformation: Transformation | undefined;
 }
 
+export interface UpdateMessage extends BasicMessage {
+  originalID: string;
+}
+
 export type PluginMessage = {
   pluginMessage: SelectionMessage;
 };

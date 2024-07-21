@@ -50,4 +50,7 @@ export class Point {
   atan2() {
     return Math.atan2(this.x, this.y);
   }
+  clone(): Point {
+    return new Point(this.x, this.y, this.z);
+  }
 }

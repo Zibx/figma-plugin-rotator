@@ -3,8 +3,13 @@
 <script src="https://cdn.jsdelivr.net/gh/thomas-lowry/figma-plugin-ds/dist/iife/figma-plugin-ds.js"></script>
 <link
   rel="stylesheet" as="style" href="https://cdn.jsdelivr.net/gh/thomas-lowry/figma-plugin-ds/dist/figma-plugin-ds.css"/>
-
+<div class="object-clone-pane">
+  <div class="object-clone__wrapper">
+    <button class="button button--primary button--initialize">Rotate!</button>
+  </div>
+</div>
 <div class="object-selected">
+  <button class="update-path-button">🔄</button>
   <div class="flex">
     <div class="inputs-ui">
       <label class="input__wrap">
@@ -31,7 +36,7 @@
     </div>
   </div>
   <div class="flex">
-    <button id="apply" class="button button--primary apply-button">Apply</button>
+    <button id="apply" class="button button--primary apply-button" title="Update Vector Data">Apply</button>
     <div class="checkbox">
       <input id="instant" type="checkbox" class="checkbox__box is_instant" />
       <label for="instant" class="checkbox__label">instant mode</label>

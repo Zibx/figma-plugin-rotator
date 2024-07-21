@@ -15,8 +15,12 @@
 - [x] Switch from [x,y] arrays to `Point` class
 - [x] Debounce Figma update
 - [x] Logo
-- [ ] Store plugin data in the element
-- [ ] Create Property panel button for open the plugin in generated objects
+- [x] Store plugin data in the element
+- [x] Create Property panel button for open the plugin in generated objects
 - [x] Rotation without scaling into original frame for 2D
-- [ ] Watch changes on the original object
-- [ ] Change input values by dragging labels 
+- [x] Watch changes on the original object
+- [ ] Change input values by dragging labels
+- [x] Reposition updated Path at the center 
+- [x] Multiple paths clone
+- [ ] Group rotation
+- [ ] Background image transformation

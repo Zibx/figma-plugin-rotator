@@ -13,7 +13,9 @@ export const listenEvents = function (): void {
     inputValues,
     inputElements,
     updateInputValue,
-    applyTransformation
+    applyTransformation,
+    hideUpdatePathButton,
+    updatePathData
   } = getContext();
 
   const resize = function () {
@@ -45,6 +47,14 @@ export const listenEvents = function (): void {
   ui.projection.addEventListener('change', () => {
     const is3D = (ui.projection as HTMLInputElement).checked;
     updateInputValue('projection', is3D ? PROJECTION.ORTHOGRAPHIC : PROJECTION.ISOGRAPHIC);
+  });
+
+  ui.updatePathButton.addEventListener('click', () => {
+    updatePathData();
+  });
+
+  ui.cloneButton.addEventListener('click', () => {
+    applyTransformation();
   });
 
   (ui.projection as HTMLInputElement).checked = inputValues.projection === PROJECTION.ORTHOGRAPHIC;

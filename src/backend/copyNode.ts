@@ -1,15 +1,7 @@
-export async function copyNode(
-  node: SceneNode & DefaultShapeMixin
-): Promise<{copy: VectorNode; paths: VectorPaths} | false> {
-  const NodeType = node.type;
-  let vector: VectorNode;
-  if (NodeType === 'TEXT') {
-    vector = figma.flatten([node.clone()], figma.currentPage);
-  } else {
-    vector = figma.createVector();
+export function copyNodeStyle(vector: VectorNode, node: SceneNode & DefaultShapeMixin): void {
+  if (node.fills !== figma.mixed) {
+    vector.fills = node.fills;
   }
-
-  vector.fills = node.fills;
 
   // copy stroke style
   vector.strokes = node.strokes;
@@ -19,15 +11,14 @@ export async function copyNode(
   vector.strokeMiterLimit = node.strokeMiterLimit;
   vector.strokeWeight = node.strokeWeight;
   vector.dashPattern = node.dashPattern;
+}
+export function getVectorData(node: SceneNode & DefaultShapeMixin): VectorPaths | false {
+  const NodeType = node.type;
 
   let selectionPaths: VectorPaths;
 
-  // it may be a good idea to tune SUPPORTED_TYPES in a way that
-  // value would specify the approach of getting path data
-
   if (NodeType === 'VECTOR') {
     selectionPaths = (node as VectorNode).vectorPaths;
-    await vector.setVectorNetworkAsync(node.vectorNetwork);
   } else if (
     NodeType === 'RECTANGLE' ||
     NodeType === 'ELLIPSE' ||
@@ -39,6 +30,24 @@ export async function copyNode(
     selectionPaths = node.fillGeometry;
   } else {
     console.warn('Unsupported node type:', NodeType);
+    return false;
+  }
+  return selectionPaths;
+}
+export async function copyNode(
+  node: SceneNode & DefaultShapeMixin
+): Promise<{copy: VectorNode; paths: VectorPaths} | false> {
+  const vector = figma.flatten([node.clone()], figma.currentPage);
+  copyNodeStyle(vector, node);
+  const selectionPaths = getVectorData(node);
+  if (node.type === 'VECTOR') {
+    await vector.setVectorNetworkAsync(node.vectorNetwork);
+  }
+
+  // it may be a good idea to tune SUPPORTED_TYPES in a way that
+  // value would specify the approach of getting path data
+  if (!selectionPaths) {
+    vector.remove();
     return false;
   }
   return {copy: vector, paths: selectionPaths};

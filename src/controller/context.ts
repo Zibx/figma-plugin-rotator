@@ -1,7 +1,7 @@
 import {HTMLElementHash, InputHash, Transformation} from '../types';
 import {collectInputs, collectUiElements} from '../view/elements';
 import {redraw3D} from '../view/preview';
-import {INITIAL_VALUES, PROJECTION, UPDATE_MODE} from '../constants/consts';
+import {INITIAL_VALUES, MESSAGE_TYPE, PROJECTION, UPDATE_MODE} from '../constants/consts';
 import {Point} from '../util/Point';
 
 export type uiCTX = {
@@ -13,6 +13,13 @@ export type uiCTX = {
   resetInputValues: (transformation: Transformation | undefined) => void;
   inputValues: Transformation;
   hideMessage: () => void;
+  showCloneDialog: () => void;
+  hideCloneDialog: () => void;
+  updatePathData: () => void;
+  showObjectModificationDialog: () => void;
+  hideObjectModificationDialog: () => void;
+  showUpdatePathButton: () => void;
+  hideUpdatePathButton: () => void;
   applyTransformation: () => void;
   showMessage: (text: string) => void;
   updateInputValue: (key: keyof Transformation, val: number) => void;
@@ -45,13 +52,24 @@ export function initDOM(): Promise<boolean> {
         parent.postMessage(
           {
             pluginMessage: {
-              type: 'apply-transformation',
+              type: MESSAGE_TYPE.APPLY_TRANSFORMATION,
               data: inputValues,
               instant: instant || false
             }
           },
           '*'
         );
+      },
+      updatePathData: () => {
+        parent.postMessage(
+          {
+            pluginMessage: {
+              type: MESSAGE_TYPE.UPDATE_PATH_DATA
+            }
+          },
+          '*'
+        );
+        context.hideUpdatePathButton();
       },
       updateInputValue: function (key: keyof Transformation, val: number) {
         if (isNaN(val)) {
@@ -90,14 +108,30 @@ export function initDOM(): Promise<boolean> {
         }
         redraw3D();
       },
+      showObjectModificationDialog: function () {
+        context.ui.objectSelected.style.display = 'block';
+      },
+      hideObjectModificationDialog: function () {
+        context.ui.objectSelected.style.display = 'none';
+      },
+      showCloneDialog: function () {
+        context.ui.objectClonePane.style.display = 'block';
+      },
+      hideCloneDialog: function () {
+        context.ui.objectClonePane.style.display = 'none';
+      },
       hideMessage: function () {
         context.ui.objectNotSelected.style.display = 'none';
-        context.ui.objectSelected.style.display = 'block';
       },
       showMessage: function (text: string) {
         context.ui.objectNotSelected.style.display = 'block';
-        context.ui.objectSelected.style.display = 'none';
         context.ui.annotation.innerText = text;
+      },
+      showUpdatePathButton: function (): void {
+        context.ui.updatePathButton.style.display = 'block';
+      },
+      hideUpdatePathButton: function (): void {
+        context.ui.updatePathButton.style.display = 'none';
       },
       loaded: loaded
     };

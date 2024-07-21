@@ -19,12 +19,17 @@ export function collectUiElements(): HTMLElementHash {
   return {
     objectNotSelected: getElement('.object-not-selected'),
     annotation: getElement('.annotation'),
+
     objectSelected: getElement('.object-selected'),
     isInstant: getElement('.is_instant'),
     applyButton: getElement('.apply-button'),
     previewEl: getElement('.preview-3d'),
     projection: getElement('.is_3D'),
-    canvas: getElement('#canvas')
+    canvas: getElement('#canvas'),
+    updatePathButton: getElement('.update-path-button'),
+
+    objectClonePane: getElement('.object-clone-pane'),
+    cloneButton: getElement('.button--initialize')
   };
 }
 
